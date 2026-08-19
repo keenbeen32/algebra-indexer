@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: pumex-algebra-envio
+description: >-
+  Algebra Integral indexer covering two deployments: Linea (59144) and
+  Zircuit (48900).
+ 
+address_format: lowercase
+
+# `Transaction.gasLimit` comes from the `getTxGas` effect, not from here: Envio
+# rejects `gas` in transaction_fields whenever any chain syncs over RPC, and
+# chain 48900 does. Do NOT add `- gas` here unless the 48900 `rpc:` block is
+# also removed — codegen will fail.
+field_selection:
+  transaction_fields:
+    - hash
+    - from
+    - gasPrice
+
+contracts:
+  - name: Factory
+    abi_file_path: ./abis/Factory.json
+    events:
+      - event: Pool(address indexed token0, address indexed token1, address pool)
+        name: PoolCreated # `Pool` would collide with the Pool contract name
+      - event: DefaultCommunityFee(uint16 newDefaultCommunityFee)
+
+  - name: NonfungiblePositionManager
+    abi_file_path: ./abis/NonfungiblePositionManager.json
+    events:
+      - event: Collect(uint256 indexed tokenId, address recipient, uint256 amount0, uint256 amount1)
+      - event: DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)
+      - event: IncreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint128 actualLiquidity, uint256 amount0, uint256 amount1, address pool)
+      - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+
+  - name: Pool
+    abi_file_path: ./abis/Pool.json
+    events:
+      - event: Initialize(uint160 price, int24 tick)
+      - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 price, uint128 liquidity, int24 tick)
+      - event: Mint(address sender, address indexed owner, int24 indexed bottomTick, int24 indexed topTick, uint128 liquidityAmount, uint256 amount0, uint256 amount1)
+      - event: Burn(address indexed owner, int24 indexed bottomTick, int24 indexed topTick, uint128 liquidityAmount, uint256 amount0, uint256 amount1)
+      - event: Fee(uint16 fee)
+      - event: Collect(address indexed owner, address recipient, int24 indexed bottomTick, int24 indexed topTick, uint128 amount0, uint128 amount1)
+      - event: CommunityFee(uint16 communityFee0New, uint16 communityFee1New)
+      - event: TickSpacing(int24 newTickSpacing)
+
+chains:
+  - id: 59144
+    start_block: 143660
+    contracts:
+      - name: Factory
+        address: "0x622b2c98123D303ae067DB4925CD6282B3A08D0F"
+      - name: NonfungiblePositionManager
+        address: "0x5D3D9E20ad27dd61182505230D1bD075bd249E4B"
+      - name: Pool
+
+  # Syncs from RPC, and needs an endpoint that serves complete historical logs.
+  # See the chain notes in the README.
+  - id: 48900
+    start_block: 3709368
+    rpc:
+      # No `:-` default on purpose: an unset ENVIO_RPC_URL_48900 must fail
+      # loudly rather than quietly source from a short-history endpoint.
+      - url: ${ENVIO_RPC_URL_48900}
+        for: sync
+    contracts:
+      - name: Factory
+        address: "0x03057ae6294292b299a1863420edD65e0197AFEf"
+      - name: NonfungiblePositionManager
+        address: "0x4AB74F39f260C31059F679A69F726C75cF3c2fea"
+      - name: Pool

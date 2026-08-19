@@ -1,0 +1,33 @@
+{
+  /* For details: https://www.totaltypescript.com/tsconfig-cheat-sheet */
+  "compilerOptions": {
+    /* Base Options: */
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    /* Strictness */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    /* For running Envio: */
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+
+    /* scripts/ are run directly by `node script.ts`, whose TS resolver needs a
+       literal .ts specifier when importing from src/. Safe here because noEmit
+       is set — this only affects typechecking, not Envio's build. */
+    "allowImportingTsExtensions": true,
+
+    /* Code doesn't run in the DOM: */
+    "lib": ["es2022"],
+    "types": ["node"]
+  }
+}
